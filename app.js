@@ -11,6 +11,10 @@ let known = {};
 try { known = JSON.parse(localStorage.getItem('known') || '{}'); } catch (e) {}
 const save = () => { try { localStorage.setItem('known', JSON.stringify(known)); } catch (e) {} };
 
+let edits = {};
+try { edits = JSON.parse(localStorage.getItem('edits') || '{}'); } catch (e) {}
+const saveEdits = () => { try { localStorage.setItem('edits', JSON.stringify(edits)); } catch (e) {} };
+
 // ---- data ----
 const SETS = { vocab: window.VOCAB || {}, ex: window.EXERCISES || {} };
 const LABEL = { vocab: 'Vocab', ex: 'Exercise', mine: 'My List' };
@@ -36,8 +40,20 @@ const cardsOf = (type, n) => type === 'mine'
   ? mine.map(c => ({ id: 'mine-' + c.id, type: 'mine', n: 0, front: c.ar, back: c.en, extra: '' }))
   : (SETS[type][n] || []).map((c, i) => ({
     id: `${type}-${n}-${i}`, type, n,
-    front: type === 'vocab' ? c.ar : c.q, back: type === 'vocab' ? c.en : c.a, extra: extraHtml(c)
+    front: type === 'vocab' ? c.ar : c.q, orig: type === 'vocab' ? c.en : c.a,
+    back: edits[`${type}-${n}-${i}`] ?? (type === 'vocab' ? c.en : c.a), extra: extraHtml(c)
   }));
+
+// change the meaning shown on a card (kept in this browser only)
+function setMeaning(c, val) {
+  val = val.trim();
+  if (c.type === 'mine') {
+    const m = mine.find(x => 'mine-' + x.id === c.id); if (m && val) { m.en = val; saveMine(); c.back = val; }
+    return;
+  }
+  if (!val || val === c.orig) { delete edits[c.id]; c.back = c.orig; } else { edits[c.id] = val; c.back = val; }
+  saveEdits();
+}
 
 // ---- state ----
 let tab = 'vocab', mixMode = false, picked = new Set();
@@ -165,7 +181,7 @@ const front = c => session.reverse ? c.back : c.front;
 const back = c => session.reverse ? c.front : c.back;
 
 function flash(d) {
-  let i = 0, flipped = false;
+  let i = 0, flipped = false, editing = false;
   const stage = $('#stage');
   const draw = () => {
     const c = d[i];
@@ -177,12 +193,24 @@ function flash(d) {
       <div class="row">
         <button id="prev">←</button><button id="flipb" class="primary" style="flex:1">Flip</button><button id="next">→</button></div>
       <div class="row"><button id="no" style="flex:1">✗ Still learning</button>
-        <button id="yes" style="flex:1">${known[c.id] ? '✓ Known (tap to undo)' : '✓ I know it'}</button></div>`;
+        <button id="yes" style="flex:1">${known[c.id] ? '✓ Known (tap to undo)' : '✓ I know it'}</button></div>
+      ${editing ? `<div class="form"><input id="ed" value="${esc(c.back)}" placeholder="Meaning">
+        <div class="row" style="margin:0"><button id="sv" class="primary" style="flex:1">Save</button>
+        ${c.type !== 'mine' && edits[c.id] ? '<button id="rs">Reset to original</button>' : ''}<button id="cn">Cancel</button></div></div>`
+      : `<div class="row"><button id="edit" style="flex:1">✎ Edit meaning${edits[c.id] ? ' (edited)' : ''}</button></div>`}`;
     $('#card').onclick = $('#flipb').onclick = () => { flipped = !flipped; $('#card').classList.toggle('f', flipped); };
     const go = k => { i = (i + k + d.length) % d.length; flipped = false; draw(); };
     $('#prev').onclick = () => go(-1); $('#next').onclick = () => go(1);
     $('#yes').onclick = () => { known[c.id] ? delete known[c.id] : known[c.id] = 1; save(); go(1); };
     $('#no').onclick = () => { delete known[c.id]; save(); go(1); };
+    if (editing) {
+      const ed = $('#ed'); ed.focus();
+      const done = v => { if (v !== null) setMeaning(c, v); editing = false; draw(); };
+      $('#sv').onclick = () => done(ed.value);
+      ed.onkeydown = e => { if (e.key === 'Enter') done(ed.value); };
+      $('#cn').onclick = () => done(null);
+      if ($('#rs')) $('#rs').onclick = () => done('');
+    } else $('#edit').onclick = () => { editing = true; draw(); };
   };
   draw();
 }
