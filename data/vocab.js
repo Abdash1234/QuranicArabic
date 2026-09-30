@@ -1,12 +1,37 @@
 // VOCAB LISTS — add your weekly vocab here.
-// Format: each entry is { ar: "arabic", en: "english" }. Optional: note: "extra info" (e.g. plural, root)
-// Lists 1–40. Leave [] for lists you haven't added yet.
+// Format: { ar: "arabic", en: "english", tr: "transliteration", pl: "arabic plural", plTr: "plural transliteration", note: "extra" }
+// Only ar + en are required. Lists 1–40. Leave [] for lists not added yet.
 window.VOCAB = {
   1: [
-    // SAMPLE — replace with your real vocab 1
-    { ar: "كِتَابٌ", en: "a book" },
-    { ar: "بَيْتٌ", en: "a house" },
-    { ar: "مَسْجِدٌ", en: "a mosque" },
-    { ar: "قَلَمٌ", en: "a pen" },
+    { ar: "اَللّٰهُ", en: "God", tr: "Allāhu" },
+    { ar: "إِلَٰهٌ", en: "a god", tr: "ilāhun", pl: "آلِهَةٌ", plTr: "ālihatun" },
+    { ar: "أَجْرٌ", en: "reward", tr: "ajrun", pl: "أُجُورٌ", plTr: "ujūrun" },
+    { ar: "آيَةٌ", en: "sign, verse", tr: "āyatun", pl: "آيَاتٌ", plTr: "āyātun" },
+    { ar: "بَلَدٌ", en: "town", tr: "baladun", pl: "بِلَادٌ", plTr: "bilādun" },
+    { ar: "رَسُولٌ", en: "messenger", tr: "rasūlun", pl: "رُسُلٌ", plTr: "rusulun" },
+    { ar: "رَحْمَةٌ", en: "mercy", tr: "raḥmatun" },
+    { ar: "عَذَابٌ", en: "punishment", tr: "ʿadhābun" },
+    { ar: "فَوْزٌ", en: "victory", tr: "fawzun" },
+    { ar: "قُرْآنٌ", en: "Qur'ān, recitation", tr: "qurʾānun" },
+    { ar: "كِتَابٌ", en: "scripture, document, book", tr: "kitābun", pl: "كُتُبٌ", plTr: "kutubun" },
+    { ar: "خَلِيفَةٌ", en: "successor, viceroy, caliph", tr: "khalīfatun", pl: "خُلَفَاءُ", plTr: "khulafāʾu" },
+    { ar: "أَرْضٌ", en: "earth", tr: "arḍun", note: "feminine" },
+    { ar: "أُمٌّ", en: "mother", tr: "ummun", pl: "أُمَّهَاتٌ", plTr: "ummahātun" },
+    { ar: "يَوْمٌ", en: "day", tr: "yawmun", pl: "أَيَّامٌ", plTr: "ayyāmun" },
+    { ar: "أَمِينٌ", en: "faithful, secure", tr: "amīnun" },
+    { ar: "آخِرٌ", en: "last, [next]", tr: "ākhirun" },
+    { ar: "شَدِيدٌ", en: "strong, severe", tr: "shadīdun", pl: "شِدَادٌ", plTr: "shidādun" },
+    { ar: "عَزِيزٌ", en: "mighty", tr: "ʿazīzun" },
+    { ar: "عَظِيمٌ", en: "great, mighty", tr: "ʿaẓīmun" },
+    { ar: "قَوِيٌّ", en: "strong", tr: "qawiyyun" },
+    { ar: "كَبِيرٌ", en: "big, great", tr: "kabīrun" },
+    { ar: "كَرِيمٌ", en: "noble, generous", tr: "karīmun", pl: "كِرَامٌ", plTr: "kirāmun" },
+    { ar: "مَجِيدٌ", en: "glorious", tr: "majīdun" },
+    { ar: "وَاسِعٌ", en: "wide, ample", tr: "wāsiʿun" },
+    { ar: "مُبِينٌ", en: "clear", tr: "mubīnun" },
+    { ar: "أَوَّلُ", en: "first", tr: "awwalu", pl: "أَوَّلُونَ", plTr: "awwalūna" },
+    { ar: "أُولَى", en: "first", tr: "ūlā", note: "feminine" },
+    { ar: "آخَرُ", en: "other", tr: "ākharu", pl: "آخَرُونَ", plTr: "ākharūna" },
+    { ar: "أُخْرَى", en: "other", tr: "ukhrā", pl: "أُخَرُ", plTr: "ukharu", note: "feminine" },
   ],
 };

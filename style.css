@@ -43,3 +43,5 @@ input.ar-in{font-family:"Amiri","Noto Naskh Arabic",serif;font-size:1.5rem;direc
 .kb button.wide{max-width:none;flex:3;font-family:inherit;font-size:1rem}
 .item{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--card);border:1px solid var(--bd);border-radius:10px;margin-top:8px}
 .item .ar{font-size:1.6rem;flex:1}.item span:nth-child(2){flex:1}.item button{padding:6px 10px}
+.tr{font-style:italic;color:var(--mut);font-size:1.05rem;margin-top:8px}
+.pl{font-size:1rem;color:var(--mut);margin-top:6px}.pl .ar{font-size:1.6rem;color:var(--txt)}

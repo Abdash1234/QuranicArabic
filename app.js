@@ -27,12 +27,17 @@ $('#theme').onclick = () => {
   document.documentElement.dataset.theme = t;
   try { localStorage.setItem('theme', t); } catch (e) {}
 };
+const extraHtml = c => [
+  c.tr && `<div class="tr">${esc(c.tr)}</div>`,
+  c.pl && `<div class="pl">plural: <span class="ar">${esc(c.pl)}</span>${c.plTr ? ` <i>${esc(c.plTr)}</i>` : ''}</div>`,
+  c.note && `<div class="note">${esc(c.note)}</div>`
+].filter(Boolean).join('');
 const cardsOf = (type, n) => type === 'mine'
-  ? mine.map(c => ({ id: 'mine-' + c.id, type: 'mine', n: 0, front: c.ar, back: c.en, note: '' }))
+  ? mine.map(c => ({ id: 'mine-' + c.id, type: 'mine', n: 0, front: c.ar, back: c.en, extra: '' }))
   : (SETS[type][n] || []).map((c, i) => ({
-  id: `${type}-${n}-${i}`, type, n,
-  front: type === 'vocab' ? c.ar : c.q, back: type === 'vocab' ? c.en : c.a, note: c.note || ''
-}));
+    id: `${type}-${n}-${i}`, type, n,
+    front: type === 'vocab' ? c.ar : c.q, back: type === 'vocab' ? c.en : c.a, extra: extraHtml(c)
+  }));
 
 // ---- state ----
 let tab = 'vocab', mixMode = false, picked = new Set();
@@ -168,7 +173,7 @@ function flash(d) {
       <div class="muted center">${i + 1} / ${d.length}</div><div class="bar"><i style="width:${(i + 1) / d.length * 100}%"></i></div>
       <div class="flip ${flipped ? 'f' : ''}" id="card"><div class="in">
         <div class="face">${fmt(front(c))}</div>
-        <div class="face back">${fmt(back(c))}${c.note ? `<div class="note">${esc(c.note)}</div>` : ''}</div></div></div>
+        <div class="face back">${fmt(back(c))}${c.extra}</div></div></div>
       <div class="row">
         <button id="prev">←</button><button id="flipb" class="primary" style="flex:1">Flip</button><button id="next">→</button></div>
       <div class="row"><button id="no" style="flex:1">✗ Still learning</button>
