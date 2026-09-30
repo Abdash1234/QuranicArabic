@@ -1,31 +1,45 @@
-:root{--bg:#0f1a17;--card:#173029;--acc:#e0b24a;--txt:#f3efe4;--mut:#9fb3aa;--ok:#4caf7d;--bad:#d9634f}
+/* Colour scheme: cream + green. To try cream + red, change --acc / --acc2 in both themes (e.g. #a33a32). */
+:root{--bg:#f6efdc;--card:#fffaf0;--bd:#e0d3b0;--txt:#2b2a25;--mut:#7a7361;--acc:#2f6b4f;--onacc:#fffaf0;--ok:#3d9a66;--bad:#c4553f;--hi:#2f6b4f22}
+:root[data-theme=dark]{--bg:#141d19;--card:#1e2c26;--bd:#2f453b;--txt:#f1ebd8;--mut:#9db1a5;--acc:#8fcaa4;--onacc:#12201a;--ok:#5fc08a;--bad:#e07a63;--hi:#8fcaa422}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--txt);font-family:system-ui,sans-serif}
-header{display:flex;align-items:center;gap:12px;padding:14px 16px;position:sticky;top:0;background:var(--bg);z-index:5}
+body{margin:0;background:var(--bg);color:var(--txt);font-family:system-ui,sans-serif;transition:background .2s,color .2s}
+header{display:flex;align-items:center;gap:8px;padding:14px 16px;position:sticky;top:0;background:var(--bg);z-index:5}
 h1{font-size:1.2rem;margin:0;flex:1;color:var(--acc)}
 main{max-width:720px;margin:0 auto;padding:0 16px 40px}
-button{font:inherit;color:var(--txt);background:var(--card);border:1px solid #2c4a40;border-radius:10px;padding:10px 14px;cursor:pointer}
+button{font:inherit;color:var(--txt);background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:10px 14px;cursor:pointer}
 button:hover{border-color:var(--acc)}
-button.primary{background:var(--acc);color:#1a1a1a;border-color:var(--acc);font-weight:600}
+button.primary,.tabs button.on{background:var(--acc);color:var(--onacc);border-color:var(--acc);font-weight:600}
 .tabs,.row{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
-.tabs button{flex:1}.tabs button.on{background:var(--acc);color:#1a1a1a;font-weight:600}
+.tabs button{flex:1}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:10px;margin-top:12px}
-.tile{padding:14px 4px;text-align:center;border-radius:12px;background:var(--card);border:1px solid #2c4a40;cursor:pointer;position:relative}
+.tile{padding:14px 4px;text-align:center;border-radius:12px;background:var(--card);border:1px solid var(--bd);cursor:pointer;position:relative}
 .tile b{display:block;font-size:1.3rem}.tile small{color:var(--mut)}
-.tile.empty{opacity:.4}.tile.sel{border-color:var(--acc);box-shadow:0 0 0 2px var(--acc)}
-.tile .prog{position:absolute;left:8px;right:8px;bottom:5px;height:3px;background:#0003;border-radius:2px}
+.tile.empty{opacity:.45}.tile.sel{border-color:var(--acc);box-shadow:0 0 0 2px var(--acc)}
+.tile .prog{position:absolute;left:8px;right:8px;bottom:5px;height:3px;background:var(--bd);border-radius:2px}
 .tile .prog i{display:block;height:100%;background:var(--ok);border-radius:2px}
 .muted{color:var(--mut);font-size:.9rem}
 .flip{perspective:1000px;margin:16px 0;height:280px;cursor:pointer}
 .flip .in{position:relative;width:100%;height:100%;transition:transform .45s;transform-style:preserve-3d}
 .flip.f .in{transform:rotateY(180deg)}
-.face{position:absolute;inset:0;backface-visibility:hidden;background:var(--card);border:1px solid #2c4a40;border-radius:18px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center;font-size:1.6rem;overflow:auto}
+.face{position:absolute;inset:0;backface-visibility:hidden;background:var(--card);border:1px solid var(--bd);border-radius:18px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center;font-size:1.6rem;overflow:auto;box-shadow:0 2px 10px #0000000d}
 .face.back{transform:rotateY(180deg);border-color:var(--acc)}
 .ar{font-family:"Amiri","Scheherazade New","Noto Naskh Arabic",serif;font-size:2.6rem;direction:rtl;line-height:1.6}
 .note{font-size:.9rem;color:var(--mut);margin-top:10px}
-.bar{height:6px;background:var(--card);border-radius:3px;margin:8px 0}.bar i{display:block;height:100%;background:var(--acc);border-radius:3px}
+.bar{height:6px;background:var(--bd);border-radius:3px;margin:8px 0}.bar i{display:block;height:100%;background:var(--acc);border-radius:3px}
 .mgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
 .mgrid button{min-height:64px}.mgrid .ar{font-size:1.6rem}
-button.pick{border-color:var(--acc)}button.done{visibility:hidden}button.bad{border-color:var(--bad);background:#d9634f33}
-button.good{border-color:var(--ok);background:#4caf7d33}
+button.pick{border-color:var(--acc);background:var(--hi)}button.done{visibility:hidden}
+button.bad{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 20%,transparent)}
+button.good{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 22%,transparent)}
 .center{text-align:center}.big{font-size:2rem;margin:20px 0}
+/* personal list + keyboard */
+input{font:inherit;color:var(--txt);background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:10px 12px;width:100%}
+input:focus{outline:2px solid var(--acc)}
+input.ar-in{font-family:"Amiri","Noto Naskh Arabic",serif;font-size:1.5rem;direction:rtl}
+.form{display:grid;gap:8px;margin:12px 0}
+.kb{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:8px;margin:8px 0;direction:ltr}
+.kb .kr{display:flex;gap:4px;justify-content:center;margin-bottom:4px;flex-wrap:wrap}
+.kb button{min-width:34px;padding:8px 4px;font-size:1.3rem;font-family:"Amiri","Noto Naskh Arabic",serif;flex:1;max-width:46px}
+.kb button.wide{max-width:none;flex:3;font-family:inherit;font-size:1rem}
+.item{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--card);border:1px solid var(--bd);border-radius:10px;margin-top:8px}
+.item .ar{font-size:1.6rem;flex:1}.item span:nth-child(2){flex:1}.item button{padding:6px 10px}

@@ -13,8 +13,23 @@ const save = () => { try { localStorage.setItem('known', JSON.stringify(known));
 
 // ---- data ----
 const SETS = { vocab: window.VOCAB || {}, ex: window.EXERCISES || {} };
-const LABEL = { vocab: 'Vocab', ex: 'Exercise' };
-const cardsOf = (type, n) => (SETS[type][n] || []).map((c, i) => ({
+const LABEL = { vocab: 'Vocab', ex: 'Exercise', mine: 'My List' };
+const isV = t => t === 'vocab' || t === 'mine';
+
+// ---- personal list ----
+let mine = [];
+try { mine = JSON.parse(localStorage.getItem('mine') || '[]'); } catch (e) {}
+const saveMine = () => { try { localStorage.setItem('mine', JSON.stringify(mine)); } catch (e) {} };
+
+// ---- theme ----
+$('#theme').onclick = () => {
+  const t = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+  document.documentElement.dataset.theme = t;
+  try { localStorage.setItem('theme', t); } catch (e) {}
+};
+const cardsOf = (type, n) => type === 'mine'
+  ? mine.map(c => ({ id: 'mine-' + c.id, type: 'mine', n: 0, front: c.ar, back: c.en, note: '' }))
+  : (SETS[type][n] || []).map((c, i) => ({
   id: `${type}-${n}-${i}`, type, n,
   front: type === 'vocab' ? c.ar : c.q, back: type === 'vocab' ? c.en : c.a, note: c.note || ''
 }));
@@ -25,8 +40,61 @@ let session = null;
 
 backBtn.onclick = () => { session = null; home(); };
 
+const KB = ['ضصثقفغعهخحجد','شسيبلاتنمكط','ئءؤرىةوزظذ','أإآ'];
+const HARAKAT = ['َ','ُ','ِ','ْ','ّ','ً','ٌ','ٍ'];
+let kbOn = false;
+
+function homeMine() {
+  const items = mine.map(c => `<div class="item"><span class="ar">${esc(c.ar)}</span><span>${esc(c.en)}</span><button data-del="${c.id}">✕</button></div>`).join('');
+  app.innerHTML = `${tabsHtml()}
+    <div class="form">
+      <input id="f-ar" class="ar-in" dir="rtl" placeholder="Arabic" ${kbOn ? 'inputmode="none"' : ''} autocomplete="off">
+      <input id="f-en" placeholder="English meaning" autocomplete="off">
+      <div class="row" style="margin:0"><button id="kbt">${kbOn ? '⌨ Hide Arabic keyboard' : '⌨ Arabic keyboard'}</button>
+        <button id="add" class="primary" style="flex:1">Add word</button></div>
+    </div>
+    <div id="kb"></div>
+    ${mine.length ? `<div class="row"><button id="studymine" class="primary" style="flex:1">Study my list (${mine.length})</button></div>` : '<p class="muted">Your personal list is empty. Add words you want to remember.</p>'}
+    ${items}`;
+  bindTabs();
+  const ar = $('#f-ar'), en = $('#f-en');
+  if (kbOn) drawKb(ar);
+  $('#kbt').onclick = () => { kbOn = !kbOn; homeMine(); };
+  const add = () => {
+    if (!ar.value.trim() || !en.value.trim()) return;
+    mine.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 5), ar: ar.value.trim(), en: en.value.trim() });
+    saveMine(); homeMine(); $('#f-ar').focus();
+  };
+  $('#add').onclick = add;
+  en.onkeydown = e => { if (e.key === 'Enter') add(); };
+  app.querySelectorAll('[data-del]').forEach(b => b.onclick = () => { mine = mine.filter(c => c.id !== b.dataset.del); saveMine(); homeMine(); });
+  if ($('#studymine')) $('#studymine').onclick = () => start([0]);
+}
+
+function drawKb(input) {
+  const key = (l, cls = '') => `<button type="button" data-k="${l}" class="${cls}">${l === ' ' ? 'space' : l === '⌫' ? '⌫' : (HARAKAT.includes(l) ? '◌' + l : l)}</button>`;
+  $('#kb').innerHTML = `<div class="kb">${KB.map(r => `<div class="kr">${[...r].map(l => key(l)).join('')}</div>`).join('')}
+    <div class="kr">${HARAKAT.map(l => key(l)).join('')}</div>
+    <div class="kr">${key(' ', 'wide')}${key('⌫', 'wide')}</div></div>`;
+  $('#kb').querySelectorAll('[data-k]').forEach(b => {
+    b.onmousedown = e => e.preventDefault(); // keep focus in the input
+    b.onclick = () => {
+      const k = b.dataset.k, s = input.selectionStart ?? input.value.length, e = input.selectionEnd ?? s;
+      if (k === '⌫') {
+        if (s !== e) input.setRangeText('', s, e, 'end');
+        else if (s > 0) input.setRangeText('', s - 1, s, 'end');
+      } else input.setRangeText(k, s, e, 'end');
+      input.focus();
+    };
+  });
+}
+
+const tabsHtml = () => `<div class="tabs">${[['vocab', 'Vocab'], ['ex', 'Exercises'], ['mine', 'My List']].map(([t, l]) => `<button data-tab="${t}" class="${tab === t ? 'on' : ''}">${l}</button>`).join('')}</div>`;
+const bindTabs = () => app.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => { tab = b.dataset.tab; picked.clear(); mixMode = false; home(); });
+
 function home() {
   backBtn.hidden = true; title.textContent = 'Arabic Revision';
+  if (tab === 'mine') return homeMine();
   const tiles = Array.from({ length: N }, (_, k) => k + 1).map(n => {
     const cs = cardsOf(tab, n), k = cs.filter(c => known[c.id]).length;
     return `<div class="tile ${cs.length ? '' : 'empty'} ${picked.has(n) ? 'sel' : ''}" data-n="${n}">
@@ -34,8 +102,7 @@ function home() {
       ${cs.length ? `<div class="prog"><i style="width:${k / cs.length * 100}%"></i></div>` : ''}</div>`;
   }).join('');
   app.innerHTML = `
-    <div class="tabs"><button data-tab="vocab" class="${tab === 'vocab' ? 'on' : ''}">Vocab</button>
-      <button data-tab="ex" class="${tab === 'ex' ? 'on' : ''}">Exercises</button></div>
+    ${tabsHtml()}
     <div class="row">
       <button id="mix">${mixMode ? '✓ Mix mode: tap lists to combine' : 'Mix multiple lists'}</button>
       <button id="all">Study everything</button>
@@ -43,7 +110,7 @@ function home() {
     </div>
     <div class="muted">Tap a ${LABEL[tab].toLowerCase()} list to start. Greyed = nothing added yet.</div>
     <div class="grid">${tiles}</div>`;
-  app.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => { tab = b.dataset.tab; picked.clear(); home(); });
+  bindTabs();
   $('#mix').onclick = () => { mixMode = !mixMode; picked.clear(); home(); };
   $('#all').onclick = () => start(Array.from({ length: N }, (_, k) => k + 1));
   if (mixMode) $('#go').onclick = () => start([...picked]);
@@ -55,7 +122,7 @@ function home() {
 }
 
 function start(ns) {
-  const cards = ns.flatMap(n => cardsOf(tab, n));
+  const cards = tab === 'mine' ? cardsOf('mine') : ns.flatMap(n => cardsOf(tab, n));
   if (!cards.length) return alert('No cards in that selection yet — add them in the data/ files.');
   session = { type: tab, ns, all: cards, mode: 'cards', flipped: false, shuffled: false, reverse: false, onlyUnknown: false };
   study();
@@ -70,13 +137,13 @@ function deck() {
 function study() {
   const s = session;
   backBtn.hidden = false;
-  title.textContent = `${LABEL[s.type]} ${s.ns.length === 1 ? s.ns[0] : `mix (${s.ns.length} lists)`}`;
-  const modes = [['cards', 'Flashcards']].concat(s.type === 'vocab' ? [['match', 'Match'], ['quiz', 'Quiz']] : []);
+  title.textContent = s.type === 'mine' ? 'My List' : `${LABEL[s.type]} ${s.ns.length === 1 ? s.ns[0] : `mix (${s.ns.length} lists)`}`;
+  const modes = [['cards', 'Flashcards']].concat(isV(s.type) ? [['match', 'Match'], ['quiz', 'Quiz']] : []);
   app.innerHTML = `
     <div class="tabs">${modes.map(([m, l]) => `<button data-mode="${m}" class="${s.mode === m ? 'on' : ''}">${l}</button>`).join('')}</div>
     <div class="row">
       <button id="shuf">${s.shuffled ? '✓ ' : ''}Shuffle</button>
-      ${s.type === 'vocab' ? `<button id="rev">${s.reverse ? 'English → Arabic' : 'Arabic → English'}</button>` : ''}
+      ${isV(s.type) ? `<button id="rev">${s.reverse ? 'English → Arabic' : 'Arabic → English'}</button>` : ''}
       <button id="unk">${s.onlyUnknown ? '✓ ' : ''}Only ones I don't know</button>
     </div>
     <div id="stage"></div>`;
