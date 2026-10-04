@@ -31,28 +31,42 @@ $('#theme').onclick = () => {
   document.documentElement.dataset.theme = t;
   try { localStorage.setItem('theme', t); } catch (e) {}
 };
+// how plurals are shown for vocab: 'together' (on the Arabic side of the singular's card) or 'separate' (their own cards)
+let plMode = 'together';
+try { plMode = localStorage.getItem('plMode') === 'separate' ? 'separate' : 'together'; } catch (e) {}
+
 const extraHtml = c => [
   c.tr && `<div class="tr">${esc(c.tr)}</div>`,
-  c.pl && `<div class="pl">plural: <span class="ar">${esc(c.pl)}</span>${c.plTr ? ` <i>${esc(c.plTr)}</i>` : ''}</div>`,
+  c.plTr && `<div class="tr">plural: ${esc(c.plTr)}</div>`,
   c.note && `<div class="note">${esc(c.note)}</div>`
 ].filter(Boolean).join('');
+// the Arabic plural line shown under the singular (together mode)
+const plHtml = c => c.pl ? `<div class="pl"><small>plural</small> <span class="ar">${esc(c.pl)}</span></div>` : '';
+
 const cardsOf = (type, n) => type === 'mine'
-  ? mine.map(c => ({ id: 'mine-' + c.id, type: 'mine', n: 0, front: c.ar, back: c.en, extra: '' }))
-  : (SETS[type][n] || []).map((c, i) => ({
-    id: `${type}-${n}-${i}`, type, n,
-    front: type === 'vocab' ? c.ar : c.q, orig: type === 'vocab' ? c.en : c.a,
-    back: edits[`${type}-${n}-${i}`] ?? (type === 'vocab' ? c.en : c.a), extra: extraHtml(c)
-  }));
+  ? mine.map(c => ({ id: 'mine-' + c.id, type: 'mine', n: 0, front: c.ar, back: c.en, meaning: c.en, suffix: '', extra: '' }))
+  : (SETS[type][n] || []).flatMap((c, i) => {
+    const id = `${type}-${n}-${i}`, orig = type === 'vocab' ? c.en : c.a, meaning = edits[id] ?? orig;
+    const base = { type, n, baseId: id, orig, meaning };
+    if (type !== 'vocab') return [{ ...base, id, front: c.q, back: meaning, suffix: '', extra: extraHtml(c) }];
+    if (c.pl && plMode === 'separate') return [
+      { ...base, id, front: c.ar, back: meaning, suffix: '', extra: extraHtml({ tr: c.tr, note: c.note }) },
+      { ...base, id: id + '-pl', front: c.pl, back: meaning + ' (plural)', suffix: ' (plural)', extra: extraHtml({ tr: c.plTr, note: 'plural of ' + c.ar }) }
+    ];
+    return [{ ...base, id, front: c.ar, back: meaning, suffix: '', pl: c.pl, extra: extraHtml({ tr: c.tr, plTr: c.plTr, note: c.note }) }];
+  });
 
 // change the meaning shown on a card (kept in this browser only)
 function setMeaning(c, val) {
   val = val.trim();
   if (c.type === 'mine') {
-    const m = mine.find(x => 'mine-' + x.id === c.id); if (m && val) { m.en = val; saveMine(); c.back = val; }
+    const m = mine.find(x => 'mine-' + x.id === c.id); if (m && val) { m.en = val; saveMine(); c.back = c.meaning = val; }
     return;
   }
-  if (!val || val === c.orig) { delete edits[c.id]; c.back = c.orig; } else { edits[c.id] = val; c.back = val; }
+  if (!val || val === c.orig) delete edits[c.baseId]; else edits[c.baseId] = val;
   saveEdits();
+  const meaning = edits[c.baseId] ?? c.orig;
+  session.all.forEach(x => { if (x.baseId === c.baseId) { x.meaning = meaning; x.back = meaning + x.suffix; } }); // keep a singular's plural card in sync
 }
 
 // ---- state ----
@@ -142,8 +156,10 @@ function home() {
   });
 }
 
+const build = (type, ns) => type === 'mine' ? cardsOf('mine') : ns.flatMap(n => cardsOf(type, n));
+
 function start(ns) {
-  const cards = tab === 'mine' ? cardsOf('mine') : ns.flatMap(n => cardsOf(tab, n));
+  const cards = build(tab, ns);
   if (!cards.length) return alert('No cards in that selection yet — add them in the data/ files.');
   session = { type: tab, ns, all: cards, mode: 'cards', flipped: false, shuffled: false, reverse: false, onlyUnknown: false };
   study();
@@ -165,12 +181,18 @@ function study() {
     <div class="row">
       <button id="shuf">${s.shuffled ? '✓ ' : ''}Shuffle</button>
       ${isV(s.type) ? `<button id="rev">${s.reverse ? 'English → Arabic' : 'Arabic → English'}</button>` : ''}
+      ${s.type === 'vocab' ? `<button id="plm">Plurals: ${plMode === 'together' ? 'on same card' : 'own cards'}</button>` : ''}
       <button id="unk">${s.onlyUnknown ? '✓ ' : ''}Only ones I don't know</button>
     </div>
     <div id="stage"></div>`;
   app.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => { s.mode = b.dataset.mode; study(); });
   $('#shuf').onclick = () => { s.shuffled = !s.shuffled; study(); };
   $('#unk').onclick = () => { s.onlyUnknown = !s.onlyUnknown; study(); };
+  if ($('#plm')) $('#plm').onclick = () => {
+    plMode = plMode === 'together' ? 'separate' : 'together';
+    try { localStorage.setItem('plMode', plMode); } catch (e) {}
+    s.all = build(s.type, s.ns); study();
+  };
   if ($('#rev')) $('#rev').onclick = () => { s.reverse = !s.reverse; study(); };
   const d = deck();
   if (!d.length) { $('#stage').innerHTML = `<p class="center big">🎉 You know them all!</p>`; return; }
@@ -188,16 +210,16 @@ function flash(d) {
     stage.innerHTML = `
       <div class="muted center">${i + 1} / ${d.length}</div><div class="bar"><i style="width:${(i + 1) / d.length * 100}%"></i></div>
       <div class="flip ${flipped ? 'f' : ''}" id="card"><div class="in">
-        <div class="face">${fmt(front(c))}</div>
-        <div class="face back">${fmt(back(c))}${c.extra}</div></div></div>
+        <div class="face">${fmt(front(c))}${session.reverse ? '' : plHtml(c)}</div>
+        <div class="face back">${fmt(back(c))}${session.reverse ? plHtml(c) : ''}${c.extra}</div></div></div>
       <div class="row">
         <button id="prev">←</button><button id="flipb" class="primary" style="flex:1">Flip</button><button id="next">→</button></div>
       <div class="row"><button id="no" style="flex:1">✗ Still learning</button>
         <button id="yes" style="flex:1">${known[c.id] ? '✓ Known (tap to undo)' : '✓ I know it'}</button></div>
-      ${editing ? `<div class="form"><input id="ed" value="${esc(c.back)}" placeholder="Meaning">
+      ${editing ? `<div class="form"><input id="ed" value="${esc(c.meaning)}" placeholder="Meaning">
         <div class="row" style="margin:0"><button id="sv" class="primary" style="flex:1">Save</button>
-        ${c.type !== 'mine' && edits[c.id] ? '<button id="rs">Reset to original</button>' : ''}<button id="cn">Cancel</button></div></div>`
-      : `<div class="row"><button id="edit" style="flex:1">✎ Edit meaning${edits[c.id] ? ' (edited)' : ''}</button></div>`}`;
+        ${c.type !== 'mine' && edits[c.baseId] ? '<button id="rs">Reset to original</button>' : ''}<button id="cn">Cancel</button></div></div>`
+      : `<div class="row"><button id="edit" style="flex:1">✎ Edit meaning${edits[c.baseId] ? ' (edited)' : ''}</button></div>`}`;
     $('#card').onclick = $('#flipb').onclick = () => { flipped = !flipped; $('#card').classList.toggle('f', flipped); };
     const go = k => { i = (i + k + d.length) % d.length; flipped = false; draw(); };
     $('#prev').onclick = () => go(-1); $('#next').onclick = () => go(1);
